@@ -1,0 +1,199 @@
+{% extends 'layout.html' %}
+{% block title %}Dashboard Saya | Absensi Siswa{% endblock %}
+
+{% block content %}
+<!-- Welcome Card -->
+<section class="glass-card mb-4">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div>
+            <h4 class="mb-1">
+                <i class="fa-solid fa-hand-wave me-2" style="color: #f59e0b;"></i>
+                Halo, {{ siswa.nama }}!
+            </h4>
+            <p class="text-secondary mb-0">Selamat datang di dashboard absensi Anda.</p>
+        </div>
+        <a href="{{ url_for('auth.logout') }}" class="btn btn-soft btn-sm">
+            <i class="fa-solid fa-right-from-bracket me-1"></i>Logout
+        </a>
+    </div>
+</section>
+
+<!-- Info Card -->
+<section class="row g-3 g-lg-4 mb-4">
+    <div class="col-6 col-lg-3">
+        <article class="stat-card gradient-a">
+            <p class="stat-label">NIS</p>
+            <h3 class="stat-value" style="font-size: 1.1rem;">{{ siswa.nis }}</h3>
+            <small class="stat-note"><i class="fa-solid fa-id-card"></i> Nomor Induk</small>
+        </article>
+    </div>
+    <div class="col-6 col-lg-3">
+        <article class="stat-card gradient-b">
+            <p class="stat-label">Kelas</p>
+            <h3 class="stat-value" style="font-size: 1.1rem;">{{ siswa.kelas }}</h3>
+            <small class="stat-note"><i class="fa-solid fa-chalkboard"></i> Kelas aktif</small>
+        </article>
+    </div>
+    <div class="col-6 col-lg-3">
+        <article class="stat-card gradient-c">
+            <p class="stat-label">Jurusan</p>
+            <h3 class="stat-value" style="font-size: 1.1rem;">{{ siswa.jurusan }}</h3>
+            <small class="stat-note"><i class="fa-solid fa-graduation-cap"></i> Program keahlian</small>
+        </article>
+    </div>
+    <div class="col-6 col-lg-3">
+        <article class="stat-card gradient-d">
+            <p class="stat-label">Hari Ini</p>
+            <h3 class="stat-value" style="font-size: 1.1rem;">
+                {% if is_monday %}
+                    <span style="color: #34d399;">Senin ✓</span>
+                {% else %}
+                    {{ ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu','Minggu'][now().weekday()] }}
+                {% endif %}
+            </h3>
+            <small class="stat-note"><i class="fa-solid fa-calendar"></i> {{ now().strftime('%d/%m/%Y') }}</small>
+        </article>
+    </div>
+</section>
+
+<!-- QR Section -->
+<section class="glass-card">
+    {% if not is_monday %}
+    <!-- NOT MONDAY -->
+    <div class="text-center py-5">
+        <div style="font-size: 4rem; margin-bottom: 1rem; opacity: 0.6;">
+            <i class="fa-solid fa-calendar-xmark"></i>
+        </div>
+        <h4 class="mb-2">QR Code Belum Tersedia</h4>
+        <p class="text-secondary mb-0" style="max-width: 400px; margin: 0 auto;">
+            QR Code absensi hanya tersedia pada <strong>hari Senin</strong>. 
+            Silakan kembali pada hari Senin untuk mendapatkan QR Code Anda.
+        </p>
+        <div class="mt-4">
+            <span class="chip"><i class="fa-solid fa-clock me-1"></i>Kembali hari Senin</span>
+        </div>
+    </div>
+
+    {% elif not today_token_exists %}
+    <!-- MONDAY BUT NO TOKEN YET -->
+    <div class="text-center py-5">
+        <div style="font-size: 4rem; margin-bottom: 1rem; opacity: 0.6;">
+            <i class="fa-solid fa-hourglass-half"></i>
+        </div>
+        <h4 class="mb-2">Menunggu Token dari Admin</h4>
+        <p class="text-secondary mb-0" style="max-width: 400px; margin: 0 auto;">
+            Admin belum men-generate token untuk hari ini. 
+            Silakan tunggu hingga admin memberikan token.
+        </p>
+    </div>
+
+    {% elif not token_redeemed %}
+    <!-- MONDAY + TOKEN EXISTS + NOT REDEEMED -->
+    <div class="text-center py-4">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">
+            <i class="fa-solid fa-ticket" style="color: #667eea;"></i>
+        </div>
+        <h4 class="mb-2">Masukkan Token Absensi</h4>
+        <p class="text-secondary mb-3" style="max-width: 420px; margin: 0 auto;">
+            Masukkan token yang diberikan admin untuk menampilkan QR Code absensi Anda.
+        </p>
+        
+        <div style="max-width: 360px; margin: 0 auto;">
+            <div id="token-error" class="mb-3" style="display: none;">
+                <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; padding: 0.6rem 1rem; border-radius: 10px; font-size: 0.85rem;">
+                    <i class="fa-solid fa-circle-exclamation me-1"></i>
+                    <span id="token-error-msg"></span>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <input type="text" id="token-input" class="form-control" 
+                       placeholder="Contoh: SEN-A7X3" 
+                       style="text-transform: uppercase; text-align: center; font-weight: 600; font-size: 1.1rem; letter-spacing: 2px;">
+                <button id="btn-redeem" class="btn btn-primary-gradient" style="white-space: nowrap;">
+                    <i class="fa-solid fa-check me-1"></i>Tukar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- MONDAY + TOKEN REDEEMED = SHOW QR -->
+    <div class="text-center py-4">
+        <div class="mb-3">
+            <span class="badge" style="background: linear-gradient(135deg, #34d399, #059669); padding: 0.5rem 1.2rem; font-size: 0.85rem; border-radius: 20px;">
+                <i class="fa-solid fa-circle-check me-1"></i>Token Terverifikasi
+            </span>
+        </div>
+        <h4 class="mb-3">QR Code Absensi Anda</h4>
+        <div class="mb-3" style="display: inline-block; background: #fff; padding: 1rem; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+            <img src="{{ url_for('static', filename='barcodes/' + siswa.kode_qr + '.png') }}" 
+                 alt="QR Code {{ siswa.nama }}" 
+                 style="width: 220px; height: 220px; image-rendering: pixelated;">
+        </div>
+        <p class="text-secondary mb-1">
+            <i class="fa-solid fa-qrcode me-1"></i>
+            <small>{{ siswa.kode_qr }}</small>
+        </p>
+        <p class="text-secondary mb-0">
+            <small>Tunjukkan QR Code ini ke scanner untuk absensi.</small>
+        </p>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const btnRedeem = document.getElementById('btn-redeem');
+    const tokenInput = document.getElementById('token-input');
+    const errorDiv = document.getElementById('token-error');
+    const errorMsg = document.getElementById('token-error-msg');
+
+    if (!btnRedeem || !tokenInput) return;
+
+    btnRedeem.addEventListener('click', function() {
+        const token = tokenInput.value.trim();
+        if (!token) {
+            errorDiv.style.display = 'block';
+            errorMsg.textContent = 'Token tidak boleh kosong.';
+            return;
+        }
+
+        btnRedeem.disabled = true;
+        btnRedeem.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Memproses...';
+        errorDiv.style.display = 'none';
+
+        fetch('{{ url_for("siswa_dash.redeem_token_route") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: token })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'success' || data.status === 'already') {
+                window.location.reload();
+            } else {
+                errorDiv.style.display = 'block';
+                errorMsg.textContent = data.message || 'Token tidak valid.';
+                btnRedeem.disabled = false;
+                btnRedeem.innerHTML = '<i class="fa-solid fa-check me-1"></i>Tukar';
+            }
+        })
+        .catch(() => {
+            errorDiv.style.display = 'block';
+            errorMsg.textContent = 'Terjadi kesalahan. Coba lagi.';
+            btnRedeem.disabled = false;
+            btnRedeem.innerHTML = '<i class="fa-solid fa-check me-1"></i>Tukar';
+        });
+    });
+
+    tokenInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            btnRedeem.click();
+        }
+    });
+});
+</script>
+{% endblock %}

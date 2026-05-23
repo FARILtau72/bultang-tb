@@ -1,0 +1,151 @@
+{% extends 'layout.html' %}
+{% block title %}Dashboard | Absensi Siswa{% endblock %}
+
+{% block content %}
+<section class="row g-3 g-lg-4 mb-4">
+    <div class="col-6 col-lg-3">
+        <article class="stat-card gradient-a">
+            <p class="stat-label">Total Siswa</p>
+            <h3 class="stat-value">{{ metrics.total_siswa }}</h3>
+            <small class="stat-note"><i class="fa-solid fa-users"></i> Data aktif</small>
+        </article>
+    </div>
+    <div class="col-6 col-lg-3">
+        <article class="stat-card gradient-b">
+            <p class="stat-label">Hadir Hari Ini</p>
+            <h3 class="stat-value">{{ metrics.hadir_hari_ini }}</h3>
+            <small class="stat-note"><i class="fa-solid fa-user-check"></i> {{ metrics.tanggal | format_tanggal }}</small>
+        </article>
+    </div>
+    <div class="col-6 col-lg-3">
+        <article class="stat-card gradient-c">
+            <p class="stat-label">Belum Hadir</p>
+            <h3 class="stat-value">{{ metrics.belum_hadir }}</h3>
+            <small class="stat-note"><i class="fa-solid fa-user-clock"></i> Perlu follow-up</small>
+        </article>
+    </div>
+    <div class="col-6 col-lg-3">
+        <article class="stat-card gradient-d">
+            <p class="stat-label">Persentase</p>
+            <h3 class="stat-value">{{ metrics.persentase }}%</h3>
+            <small class="stat-note"><i class="fa-solid fa-chart-line"></i> Kehadiran hari ini</small>
+        </article>
+    </div>
+</section>
+
+<section class="row g-4">
+    <div class="col-12 col-xl-5">
+        <article class="glass-card h-100">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h5 class="m-0"><i class="fa-solid fa-chart-column me-2"></i>Kehadiran per Jurusan</h5>
+                <span class="chip">Hari ini</span>
+            </div>
+            <div class="chart-mobile-wrap">
+                <canvas
+                    id="jurusanChart"
+                    height="220"
+                    data-labels='{{ chart_labels | tojson | safe }}'
+                    data-values='{{ chart_hadir | tojson | safe }}'
+                ></canvas>
+            </div>
+            <div class="row g-2 mt-3">
+                {% for item in jurusan_summary %}
+                <div class="col-6">
+                    <div class="mini-stat">
+                        <strong>{{ item.jurusan }}</strong>
+                        <span>{{ item.hadir_count }} / {{ item.total_siswa }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </article>
+    </div>
+
+    <div class="col-12 col-xl-7">
+        <article class="glass-card h-100">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h5 class="m-0"><i class="fa-solid fa-clock-rotate-left me-2"></i>10 Absensi Terakhir</h5>
+                <a href="{{ url_for('rekap.rekap_page') }}" class="btn btn-soft btn-sm">Lihat Rekap</a>
+            </div>
+
+            <div class="table-responsive modern-table-wrap">
+                <table class="table modern-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Nama</th>
+                            <th>Kelas</th>
+                            <th>Jurusan</th>
+                            <th>Tanggal</th>
+                            <th>Waktu</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in recent_absensi %}
+                        <tr>
+                            <td class="fw-semibold">{{ row.nama }}</td>
+                            <td>{{ row.kelas }}</td>
+                            <td>{{ row.jurusan }}</td>
+                            <td>{{ row.tanggal | format_tanggal }}</td>
+                            <td>{{ row.waktu | format_waktu }}</td>
+                            <td>
+                                <span class="badge status-{{ row.status|lower }}">{{ row.status }}</span>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-secondary">Belum ada absensi tercatat.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+const ctx = document.getElementById('jurusanChart');
+let labels = [];
+let hadirData = [];
+
+if (ctx) {
+    try {
+        labels = JSON.parse(ctx.getAttribute('data-labels') || '[]');
+        hadirData = JSON.parse(ctx.getAttribute('data-values') || '[]');
+    } catch (error) {
+        labels = [];
+        hadirData = [];
+    }
+}
+
+if (ctx && labels.length) {
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Jumlah Hadir',
+                data: hadirData,
+                borderRadius: 10,
+                backgroundColor: ['#667eea', '#5a8dee', '#7b66ff', '#8b5cf6'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: { grid: { display: false } },
+                y: { beginAtZero: true, ticks: { precision: 0 } }
+            }
+        }
+    });
+}
+</script>
+{% endblock %}

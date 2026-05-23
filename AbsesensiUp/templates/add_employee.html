@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-user-plus me-2"></i>Registrasi Karyawan Baru
+            </div>
+            <div class="card-body p-4">
+                {% if pesan %}
+                    <div class="alert alert-info alert-dismissible fade show" role="alert">
+                        <i class="fas fa-info-circle me-2"></i> {{ pesan }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endif %}
+
+                <form method="POST">
+                    <div class="mb-4">
+                        <label class="form-label text-muted small fw-bold">NAMA LENGKAP</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="fas fa-user"></i></span>
+                            <input type="text" name="nama" class="form-control" placeholder="Contoh: Budi Santoso" required>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label text-muted small fw-bold">DIVISI / KELAS</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="fas fa-briefcase"></i></span>
+                            <input type="text" name="kelas" class="form-control" placeholder="Contoh: Staff IT" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary-custom w-100 py-2 fw-bold">
+                        <i class="fas fa-save me-2"></i> SIMPAN DATA
+                    </button>
+                </form>
+
+                {% if barcode_img %}
+                <div class="text-center mt-4 pt-4 border-top">
+                    <p class="text-muted small">Barcode berhasil dibuat:</p>
+                    <img src="{{ url_for('static', filename=barcode_img) }}" class="img-fluid rounded shadow-sm mb-3 border p-2 bg-white">
+                    <br>
+                    <a href="{{ url_for('static', filename=barcode_img) }}" download class="btn btn-outline-dark btn-sm rounded-pill">
+                        <i class="fas fa-download me-1"></i> Download Barcode
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

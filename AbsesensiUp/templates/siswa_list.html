@@ -1,0 +1,137 @@
+{% extends "layout.html" %}
+{% block title %}Daftar Siswa | Absensi Siswa SMK{% endblock %}
+
+{% block content %}
+<section class="glass-panel p-4 mb-4">
+    <div class="d-flex flex-wrap justify-content-between gap-3 align-items-center mb-3">
+        <h4 class="section-title mb-0"><i class="fa-solid fa-users me-2"></i>Daftar Siswa</h4>
+        <a href="{{ url_for('siswa.siswa_add') }}" class="btn btn-primary-gradient">
+            <i class="fa-solid fa-user-plus me-1"></i>Tambah Siswa
+        </a>
+    </div>
+
+    <form method="GET" class="row g-3 align-items-end mb-3">
+        <div class="col-md-4">
+            <label class="form-label">Jurusan</label>
+            <select name="jurusan" id="filter-jurusan" class="form-select">
+                <option value="">Semua Jurusan</option>
+                {% for jur in jurusan_options %}
+                <option value="{{ jur }}" {% if jur == filters.jurusan %}selected{% endif %}>{{ jur }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Kelas</label>
+            <select name="kelas" id="filter-kelas" class="form-select">
+                <option value="">Semua Kelas</option>
+                {% for item in kelas_options %}
+                <option value="{{ item }}" {% if item == filters.kelas %}selected{% endif %}>{{ item }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4 d-flex gap-2">
+            <button class="btn btn-primary-gradient w-100" type="submit">Filter</button>
+            <a href="{{ url_for('siswa.siswa_list') }}" class="btn btn-outline-secondary w-100">Reset</a>
+        </div>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table modern-table align-middle">
+            <thead>
+                <tr>
+                    <th>NIS</th>
+                    <th>Nama</th>
+                    <th>Jurusan</th>
+                    <th>Kelas</th>
+                    <th>Kode QR</th>
+                    <th class="text-end">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for siswa in siswa_list %}
+                <tr>
+                    <td>{{ siswa.nis }}</td>
+                    <td class="fw-semibold">{{ siswa.nama }}</td>
+                    <td>{{ siswa.jurusan }}</td>
+                    <td>{{ siswa.kelas }}</td>
+                    <td><small>{{ siswa.kode_qr }}</small></td>
+                    <td class="text-end">
+                        <div class="btn-group btn-group-sm" role="group">
+                            <a href="{{ url_for('siswa.siswa_edit', siswa_id=siswa.id) }}" class="btn btn-outline-primary" title="Edit">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </a>
+                            <a href="{{ url_for('static', filename=siswa.qr_image) }}" download class="btn btn-outline-secondary" title="Download QR">
+                                <i class="fa-solid fa-download"></i>
+                            </a>
+                            <button class="btn btn-outline-dark btn-regenerate" data-id="{{ siswa.id }}" title="Regenerate QR">
+                                <i class="fa-solid fa-rotate"></i>
+                            </button>
+                            <button class="btn btn-outline-danger btn-delete-quick" data-id="{{ siswa.id }}" data-nama="{{ siswa.nama }}" title="Hapus">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-secondary">Belum ada data siswa.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        AbsensiApp.populateKelas("filter-jurusan", "filter-kelas", "{{ filters.kelas }}", true);
+
+        document.getElementById("filter-jurusan").addEventListener("change", function () {
+            AbsensiApp.populateKelas("filter-jurusan", "filter-kelas", "", true);
+        });
+
+        AbsensiApp.initRegenerateButtons();
+
+        // Quick delete button handlers
+        document.querySelectorAll(".btn-delete-quick").forEach((btn) => {
+            btn.addEventListener("click", function () {
+                const siswaId = this.dataset.id;
+                const siswaNama = this.dataset.nama;
+
+                AbsensiApp.confirmDanger({
+                    title: `Hapus ${siswaNama}?`,
+                    text: "Tindakan ini tidak dapat dibatalkan dan semua riwayat absensi akan ikut dihapus.",
+                    confirmButtonText: "Ya, hapus sekarang",
+                }).then((confirmed) => {
+                    if (!confirmed) {
+                        return;
+                    }
+
+                    fetch(`/siswa/${siswaId}/delete`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                    })
+                        .then((response) => response.json())
+                        .then((data) => {
+                            if (data.status === "success") {
+                                AbsensiApp.showAlert("Berhasil", data.message, "success").then(() => {
+                                    window.location.reload();
+                                });
+                            } else {
+                                AbsensiApp.showAlert("Gagal", data.message || "Terjadi kesalahan saat menghapus data.", "error");
+                            }
+                        })
+                        .catch((error) => {
+                            console.error("Error:", error);
+                            AbsensiApp.showAlert("Gagal", "Terjadi kesalahan saat menghapus data.", "error");
+                        });
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}

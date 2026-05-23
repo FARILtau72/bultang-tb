@@ -1,0 +1,49 @@
+{% extends 'layout.html' %}
+{% block title %}Beranda | Absensi Siswa{% endblock %}
+
+{% block content %}
+<section class="glass-card mb-4 landing-wrap">
+    <div class="row g-4 align-items-center">
+        <div class="col-lg-7">
+            <h2 class="mb-2">Akses Cepat Sistem Absensi</h2>
+            <p class="text-secondary mb-3">
+                Halaman ini dibuat ringan untuk buka web lebih cepat di HP. Pilih menu utama di bawah.
+            </p>
+            <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-primary-gradient" href="{{ url_for('dashboard.index') }}">
+                    <i class="fa-solid fa-chart-pie me-1"></i>Buka Dashboard
+                </a>
+                <a class="btn btn-soft" href="{{ url_for('scan.scan_page') }}">
+                    <i class="fa-solid fa-qrcode me-1"></i>Scan QR
+                </a>
+                <a class="btn btn-soft" href="{{ url_for('siswa.siswa_list') }}">
+                    <i class="fa-solid fa-users me-1"></i>Daftar Siswa
+                </a>
+                <a class="btn btn-soft" href="{{ url_for('rekap.rekap_page') }}">
+                    <i class="fa-solid fa-file-waveform me-1"></i>Rekap
+                </a>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="quick-grid">
+                <a class="quick-tile" href="{{ url_for('siswa.siswa_add') }}">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Tambah Siswa</span>
+                </a>
+                <a class="quick-tile" href="{{ url_for('scan.scan_page') }}">
+                    <i class="fa-solid fa-camera"></i>
+                    <span>Scan Absensi</span>
+                </a>
+                <a class="quick-tile" href="{{ url_for('rekap.rekap_page') }}">
+                    <i class="fa-solid fa-filter"></i>
+                    <span>Filter Rekap</span>
+                </a>
+                <a class="quick-tile" href="{{ url_for('dashboard.index') }}">
+                    <i class="fa-solid fa-arrow-right"></i>
+                    <span>Lihat Statistik</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

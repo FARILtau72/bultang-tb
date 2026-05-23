@@ -1,0 +1,194 @@
+{% extends "layout.html" %}
+{% block title %}Edit Siswa | Absensi Siswa SMK{% endblock %}
+
+{% block content %}
+<section class="row g-4">
+    <div class="col-lg-7">
+        <div class="glass-panel p-4 p-lg-5">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h4 class="section-title mb-0"><i class="fa-solid fa-user-pen me-2"></i>Edit Data Siswa</h4>
+                <a href="{{ url_for('siswa.siswa_list') }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fa-solid fa-arrow-left me-1"></i>Kembali
+                </a>
+            </div>
+
+            {% if error_message %}
+            <div class="alert alert-danger">{{ error_message }}</div>
+            {% endif %}
+
+            {% if success_message %}
+            <div class="alert alert-success">
+                <i class="fa-solid fa-check-circle me-2"></i>{{ success_message }}
+            </div>
+            {% endif %}
+
+            <form method="POST" class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">NIS</label>
+                    <input type="text" name="nis" class="form-control" value="{{ form_data.nis }}" placeholder="Contoh: 23110015" required />
+                    <small class="text-secondary">NIS saat ini: <strong>{{ siswa.nis }}</strong></small>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Nama Lengkap</label>
+                    <input type="text" name="nama" class="form-control" value="{{ form_data.nama }}" placeholder="Nama siswa" required />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Jurusan</label>
+                    <select name="jurusan" id="jurusan-select" class="form-select" required>
+                        {% for jur in jurusan_options %}
+                        <option value="{{ jur }}" {% if jur == form_data.jurusan %}selected{% endif %}>{{ jur }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Kelas</label>
+                    <select name="kelas" id="kelas-select" class="form-select" required>
+                        {% for item in kelas_options %}
+                        <option value="{{ item }}" {% if item == form_data.kelas %}selected{% endif %}>{{ item }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12 d-grid d-sm-flex justify-content-sm-between">
+                    <button class="btn btn-outline-danger" type="button" id="btn-delete">
+                        <i class="fa-solid fa-trash me-2"></i>Hapus Siswa
+                    </button>
+                    <button class="btn btn-primary-gradient px-4" type="submit">
+                        <i class="fa-solid fa-floppy-disk me-2"></i>Perbarui Data
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="glass-panel p-4 h-100">
+            <h5 class="section-title mb-3"><i class="fa-solid fa-qrcode me-2"></i>QR Code</h5>
+
+            {% if siswa %}
+            <div class="text-center">
+                <img src="{{ url_for('static', filename=siswa.qr_image) }}" class="img-fluid qr-preview mb-3" alt="QR {{ siswa.nama }}" />
+                <h6 class="mb-1">{{ siswa.nama }}</h6>
+                <p class="mb-1 text-secondary">NIS: {{ siswa.nis }}</p>
+                <p class="mb-3 text-secondary">{{ siswa.kelas }}</p>
+                <div class="small text-secondary mb-3">Kode QR: <strong>{{ siswa.kode_qr }}</strong></div>
+                <div class="d-flex gap-2">
+                    <a class="btn btn-outline-primary flex-grow-1" href="{{ url_for('static', filename=siswa.qr_image) }}" download>
+                        <i class="fa-solid fa-download me-1"></i>Download
+                    </a>
+                    <button class="btn btn-outline-secondary flex-grow-1" type="button" id="btn-regenerate">
+                        <i class="fa-solid fa-rotate me-1"></i>Regenerate
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fa-solid fa-triangle-exclamation me-2"></i>Konfirmasi Hapus</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Anda yakin ingin menghapus data siswa <strong>{{ siswa.nama }}</strong>?</p>
+                <p class="text-danger mb-0"><i class="fa-solid fa-info-circle me-1"></i>Tindakan ini tidak dapat dibatalkan dan semua riwayat absensi akan dihapus.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-danger" id="confirm-delete">Hapus Data</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const jurusanSelect = document.getElementById("jurusan-select");
+        const kelasSelect = document.getElementById("kelas-select");
+        const btnDelete = document.getElementById("btn-delete");
+        const btnRegenerate = document.getElementById("btn-regenerate");
+        const deleteModal = new bootstrap.Modal(document.getElementById("deleteModal"));
+        const confirmDeleteBtn = document.getElementById("confirm-delete");
+        const siswaId = Number("{{ siswa.id }}");
+
+        
+        AbsensiApp.populateKelas("jurusan-select", "kelas-select", "{{ form_data.kelas }}");
+        jurusanSelect.addEventListener("change", function () {
+            AbsensiApp.populateKelas("jurusan-select", "kelas-select", "");
+        });
+
+        
+        btnDelete.addEventListener("click", function () {
+            deleteModal.show();
+        });
+
+        
+        confirmDeleteBtn.addEventListener("click", function () {
+            confirmDeleteBtn.disabled = true;
+            confirmDeleteBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menghapus...';
+
+            fetch(`/siswa/${siswaId}/delete`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.status === "success") {
+                        deleteModal.hide();
+                        AbsensiApp.showAlert("Berhasil", data.message, "success").then(() => {
+                            window.location.href = data.redirect;
+                        });
+                    } else {
+                        AbsensiApp.showAlert("Gagal", data.message || "Terjadi kesalahan saat menghapus data.", "error");
+                        confirmDeleteBtn.disabled = false;
+                        confirmDeleteBtn.innerHTML = '<i class="fa-solid fa-trash me-1"></i>Hapus Data';
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error:", error);
+                    AbsensiApp.showAlert("Gagal", "Terjadi kesalahan saat menghapus data.", "error");
+                    confirmDeleteBtn.disabled = false;
+                    confirmDeleteBtn.innerHTML = '<i class="fa-solid fa-trash me-1"></i>Hapus Data';
+                });
+        });
+
+       
+        btnRegenerate.addEventListener("click", function () {
+            btnRegenerate.disabled = true;
+            btnRegenerate.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Regenerate...';
+
+            fetch(`/siswa/${siswaId}/regenerate_qr`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.status === "success") {
+                        // Reload page to show new QR
+                        window.location.reload();
+                    } else {
+                        AbsensiApp.showAlert("Gagal", data.message || "Terjadi kesalahan saat regenerate QR.", "error");
+                        btnRegenerate.disabled = false;
+                        btnRegenerate.innerHTML = '<i class="fa-solid fa-rotate me-1"></i>Regenerate';
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error:", error);
+                    AbsensiApp.showAlert("Gagal", "Terjadi kesalahan saat regenerate QR.", "error");
+                    btnRegenerate.disabled = false;
+                    btnRegenerate.innerHTML = '<i class="fa-solid fa-rotate me-1"></i>Regenerate';
+                });
+        });
+    });
+</script>
+{% endblock %}

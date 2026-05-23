@@ -1,0 +1,86 @@
+{% extends "layout.html" %}
+{% block title %}Tambah Siswa | Absensi Siswa SMK{% endblock %}
+
+{% block content %}
+<section class="row g-4">
+    <div class="col-lg-7">
+        <div class="glass-panel p-4 p-lg-5">
+            <h4 class="section-title mb-3"><i class="fa-solid fa-user-plus me-2"></i>Form Tambah Siswa</h4>
+
+            {% if error_message %}
+            <div class="alert alert-danger">{{ error_message }}</div>
+            {% endif %}
+
+            <form method="POST" class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">NIS</label>
+                    <input type="text" name="nis" class="form-control" value="{{ form_data.nis }}" placeholder="Contoh: 23110015" required />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Nama Lengkap</label>
+                    <input type="text" name="nama" class="form-control" value="{{ form_data.nama }}" placeholder="Nama siswa" required />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Jurusan</label>
+                    <select name="jurusan" id="jurusan-select" class="form-select" required>
+                        {% for jur in jurusan_options %}
+                        <option value="{{ jur }}" {% if jur == form_data.jurusan %}selected{% endif %}>{{ jur }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Kelas</label>
+                    <select name="kelas" id="kelas-select" class="form-select" required>
+                        {% for item in kelas_options %}
+                        <option value="{{ item }}" {% if item == form_data.kelas %}selected{% endif %}>{{ item }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12 d-grid d-sm-flex justify-content-sm-end">
+                    <button class="btn btn-primary-gradient px-4" type="submit">
+                        <i class="fa-solid fa-floppy-disk me-2"></i>Simpan Siswa
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="glass-panel p-4 h-100">
+            <h5 class="section-title mb-3"><i class="fa-solid fa-qrcode me-2"></i>Preview QR</h5>
+
+            {% if created_siswa %}
+            <div class="text-center">
+                <img src="{{ url_for('static', filename=created_siswa.qr_image) }}" class="img-fluid qr-preview mb-3" alt="QR {{ created_siswa.nama }}" />
+                <h6 class="mb-1">{{ created_siswa.nama }}</h6>
+                <p class="mb-1 text-secondary">NIS: {{ created_siswa.nis }}</p>
+                <p class="mb-3 text-secondary">{{ created_siswa.kelas }}</p>
+                <div class="small text-secondary mb-3">Kode QR: <strong>{{ created_siswa.kode_qr }}</strong></div>
+                <a class="btn btn-outline-primary" href="{{ url_for('static', filename=created_siswa.qr_image) }}" download>
+                    <i class="fa-solid fa-download me-1"></i>Download QR
+                </a>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fa-solid fa-image"></i>
+                <p class="mb-0">QR akan tampil di sini setelah data siswa disimpan.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const jurusanSelect = document.getElementById("jurusan-select");
+        const kelasSelect = document.getElementById("kelas-select");
+
+        AbsensiApp.populateKelas("jurusan-select", "kelas-select", "{{ form_data.kelas }}");
+        jurusanSelect.addEventListener("change", function () {
+            AbsensiApp.populateKelas("jurusan-select", "kelas-select", "");
+        });
+    });
+</script>
+{% endblock %}
