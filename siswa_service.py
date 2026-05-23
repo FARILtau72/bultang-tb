@@ -127,11 +127,21 @@ def add_siswa(nis: str, nama: str, jurusan: str, kelas: str) -> dict:
                     "kode_qr": kode_qr,
                 },
             )
-            siswa_id = int(cur.lastrowid)
+            siswa_id = cur.lastrowid
+            if siswa_id is None:
+                row = conn.execute(
+                    text("SELECT id FROM siswa WHERE nis = :nis"),
+                    {"nis": nis_clean},
+                ).mappings().first()
+                siswa_id = row["id"] if row else None
+        if siswa_id is None:
+            raise ValueError("Gagal mendapatkan ID siswa setelah disimpan.")
         _generate_qr_image(kode_qr)
     except IntegrityError as exc:
         if "nis" in str(exc).lower():
             raise ValueError("NIS sudah terdaftar.") from exc
+        raise ValueError("Gagal menyimpan data siswa.") from exc
+    except SQLAlchemyError as exc:
         raise ValueError("Gagal menyimpan data siswa.") from exc
 
     siswa = get_siswa_by_id(siswa_id)
