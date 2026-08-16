@@ -1,5 +1,5 @@
 from app import app, db
-from models import User, Siswa
+from app.core.models import User, Siswa
 from werkzeug.security import generate_password_hash
 
 def sync_users():

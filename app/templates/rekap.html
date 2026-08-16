@@ -1,0 +1,116 @@
+{% extends "layout.html" %}
+{% block title %}Rekapitulasi Akumulasi Absensi Siswa{% endblock %}
+
+{% block content %}
+<section class="glass-panel p-4 mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+            <h4 class="section-title mb-1">
+                <i class="fa-solid fa-file-waveform me-2"></i>REKAPITULASI AKUMULASI ABSENSI SISWA
+            </h4>
+            <span class="badge bg-secondary-subtle text-secondary border">
+                <i class="fa-solid fa-calendar-day me-1"></i>Periode: {{ periode_str }} (Khusus Hari Senin)
+            </span>
+        </div>
+        <a class="btn btn-success" href="{{ url_for('rekap.rekap_export_excel_route', start_date=filters.start_date, end_date=filters.end_date, jurusan=filters.jurusan, kelas=filters.kelas) }}">
+            <i class="fa-solid fa-file-excel me-1"></i>Export Excel
+        </a>
+    </div>
+
+    <form method="GET" class="row g-3 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label">Tanggal Awal</label>
+            <input type="date" name="start_date" class="form-control" value="{{ filters.start_date }}" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Tanggal Akhir</label>
+            <input type="date" name="end_date" class="form-control" value="{{ filters.end_date }}" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Jurusan</label>
+            <select name="jurusan" id="rekap-jurusan" class="form-select">
+                <option value="">Semua Jurusan</option>
+                {% for jur in jurusan_options %}
+                <option value="{{ jur }}" {% if jur == filters.jurusan %}selected{% endif %}>{{ jur }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Kelas</label>
+            <select name="kelas" id="rekap-kelas" class="form-select">
+                <option value="">Semua Kelas</option>
+                {% for item in kelas_options %}
+                <option value="{{ item }}" {% if item == filters.kelas %}selected{% endif %}>{{ item }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-12 d-flex gap-2">
+            <button class="btn btn-primary-gradient" type="submit">
+                <i class="fa-solid fa-filter me-1"></i>Terapkan Filter
+            </button>
+            <a href="{{ url_for('rekap.rekap_page') }}" class="btn btn-outline-secondary">Reset</a>
+        </div>
+    </form>
+</section>
+
+<section class="glass-panel p-4 mb-4">
+    <div class="table-responsive">
+        <table class="table modern-table align-middle text-center">
+            <thead>
+                <tr>
+                    <th style="width: 50px;">No</th>
+                    <th class="text-start">Nama Siswa</th>
+                    <th>Kelas</th>
+                    <th class="text-success">Hadir</th>
+                    <th class="text-info">Izin</th>
+                    <th class="text-warning">Sakit</th>
+                    <th class="text-danger">Alpha</th>
+                    <th class="fw-bold">Total Pertemuan</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr>
+                    <td>{{ row.no }}</td>
+                    <td class="text-start fw-semibold">{{ row.nama }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ row.kelas }}</span></td>
+                    <td class="fw-semibold text-success">{{ row.hadir }}</td>
+                    <td class="fw-semibold text-info">{{ row.izin }}</td>
+                    <td class="fw-semibold text-warning">{{ row.sakit }}</td>
+                    <td class="fw-semibold text-danger">{{ row.alpha }}</td>
+                    <td class="fw-bold">{{ row.total_pertemuan }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="text-center py-4 text-secondary">Tidak ada data siswa sesuai filter.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            {% if rows %}
+            <tfoot>
+                <tr class="table-light fw-bold">
+                    <td colspan="3" class="text-start ps-3">TOTAL AKUMULASI</td>
+                    <td class="text-success">{{ totals.hadir }}</td>
+                    <td class="text-info">{{ totals.izin }}</td>
+                    <td class="text-warning">{{ totals.sakit }}</td>
+                    <td class="text-danger">{{ totals.alpha }}</td>
+                    <td>{{ totals.total_pertemuan }}</td>
+                </tr>
+            </tfoot>
+            {% endif %}
+        </table>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        AbsensiApp.populateKelas("rekap-jurusan", "rekap-kelas", "{{ filters.kelas }}", true);
+
+        document.getElementById("rekap-jurusan").addEventListener("change", function () {
+            AbsensiApp.populateKelas("rekap-jurusan", "rekap-kelas", "", true);
+        });
+    });
+</script>
+{% endblock %}
